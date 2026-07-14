@@ -4,7 +4,7 @@
 
 ## Project Data
 
-The `download.zip` file contains:
+The `download.zip` (download link is in download_link.txt) file contains:
 
 - `BaSalam.products.csv` (~2.4 million products)
 - `BaSalam.reviews.csv` (~3.4 million reviews)
