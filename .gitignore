@@ -1,0 +1,10 @@
+# Ignore data directory
+data/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Environment variables
+.env
