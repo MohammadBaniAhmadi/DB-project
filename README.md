@@ -1,99 +1,97 @@
-# پروژه ۵: طراحی خط لوله داده از OLTP به OLAP
+# Project 5: Designing a Data Pipeline from OLTP to OLAP
 
-پروژه درس **طراحی پایگاه داده‌ها** — انتقال افزایشی داده باسلام (BaSalam) از PostgreSQL به ClickHouse
+**Database Design** course project — Incremental transfer of BaSalam data from PostgreSQL to ClickHouse
 
-## داده‌های پروژه
+## Project Data
 
-فایل `download.zip` شامل:
-- `BaSalam.products.csv` (~۲.۴ میلیون محصول)
-- `BaSalam.reviews.csv` (~۳.۴ میلیون نظر)
-- `docker-compose-sample.yml` (نمونه مرجع)
+The `download.zip` file contains:
 
-**راه‌اندازی داده:**
-```bash
-# فایل download.zip را در data/raw/ استخراج کنید
+- `BaSalam.products.csv` (~2.4 million products)
+- `BaSalam.reviews.csv` (~3.4 million reviews)
+- `docker-compose-sample.yml` (reference sample)
+
+**Data setup:**
+
+```powershell
+# Extract download.zip into data/raw/
 Expand-Archive download.zip -DestinationPath data/raw
 Expand-Archive data/raw/BaSalam.products.csv.zip -DestinationPath data/raw/products
 Expand-Archive data/raw/BaSalam.reviews.csv.zip -DestinationPath data/raw/reviews
 ```
 
-## معماری
+## Architecture
 
-```
+```text
 PostgreSQL (sales)  →  CDC (audit_log + Trigger)  →  Python ETL  →  ClickHouse (sales_analytics)
 ```
 
-## پیش‌نیازها
+## Prerequisites
 
-- Docker و Docker Compose
-- Python 3.11+ با `psycopg[binary]` و `clickhouse-connect`
+- Docker and Docker Compose
+- Python 3.11+ with `psycopg[binary]` and `clickhouse-connect`
 
-## راه‌اندازی
+## Setup and Execution
 
 ```bash
-# ۱. اجرای دیتابیس‌ها
+# 1. Start the databases
 docker compose up -d postgres clickhouse
 
-# ۲. نصب وابستگی‌ها
+# 2. Install the dependencies
 cd python && pip install -r requirements.txt
 
-# ۳. بارگذاری اولیه (فقط Python)
+# 3. Perform the initial data load (Python only)
 python initial_loader.py
 
-# ۴. همگام‌سازی با ClickHouse
+# 4. Synchronize the data with ClickHouse
 python run_pipeline.py
 
-# ۵. شبیه‌سازی تغییرات (۱۵ دقیقه)
+# 5. Simulate data changes for 15 minutes
 python data_simulator.py 15 30
 
-# ۶. پردازش CDC و بنچمارک
+# 6. Process CDC events and run the benchmarks
 python process_cdc_once.py
 python benchmark_queries.py
 ```
 
-### بارگذاری محدود (برای تست سریع)
+### Limited Data Loading for Quick Testing
 
 ```bash
 set LOAD_LIMIT=50000
 python initial_loader.py
 ```
 
-### مهاجرت از اسکیمای قبلی
+### Migrating from the Previous Schema
 
-اگر قبلاً داده مصنوعی بارگذاری کرده‌اید، دیتابیس را ریست کنید:
+If you have previously loaded synthetic data, reset the databases:
 
 ```bash
 docker compose down -v
 docker compose up -d postgres clickhouse
 ```
 
-یا فایل `postgres/migrate_basalam.sql` را اجرا کنید.
+Alternatively, execute the `postgres/migrate_basalam.sql` script.
 
-## ساختار پروژه
+## Project Structure
 
-```
+```text
 ├── docker-compose.yml
-├── postgres/init/          # Schema OLTP + CDC Triggers
-├── clickhouse/init/        # Schema OLAP + Data Marts
-├── data/raw/               # داده‌های BaSalam (از download.zip)
+├── postgres/init/          # OLTP schema and CDC triggers
+├── clickhouse/init/        # OLAP schema and data marts
+├── data/raw/               # BaSalam data extracted from download.zip
 ├── python/
-│   ├── initial_loader.py   # بارگذاری CSV → PostgreSQL
+│   ├── initial_loader.py   # Load CSV data into PostgreSQL
 │   ├── incremental_loader.py
 │   ├── data_simulator.py
 │   ├── run_pipeline.py
 │   ├── process_cdc_once.py
 │   └── benchmark_queries.py
-├── queries/                # ۱۰ کوئری تحلیلی + Data Marts
-└── docs/REPORT.md          # گزارش کامل فارسی
+├── queries/                # 10 analytical queries and data marts
+└── docs/REPORT.md          # Complete project report
 ```
 
-## پورت‌ها
+## Ports
 
-| سرویس | پورت |
-|--------|------|
+| Service | Port |
+|---|---:|
 | PostgreSQL | 5433 |
 | ClickHouse HTTP | 8123 |
-
-## تحویل
-
-فایل ZIP شامل `docs/REPORT.md` و اسکریپت‌های `python/`
